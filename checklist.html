@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Verificación de Pedidos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-pink-50 min-h-screen flex items-center justify-center font-sans p-6">
+  <div class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl">
+    <h1 class="text-4xl font-bold text-pink-600 mb-8 text-center">Sistema de Verificación de Pedidos</h1>
+
+    <!-- Lista de pedidos -->
+    <div id="lista-pedidos" class="">
+      <h2 class="text-2xl font-semibold mb-6 text-gray-700">Pedidos Pendientes</h2>
+      <ul class="divide-y divide-gray-200">
+        <!-- Los pedidos se cargarán aquí dinámicamente -->
+      </ul>
+    </div>
+
+    <!-- Detalle checklist (oculto al inicio) -->
+    <div id="detalle-pedido" class="hidden">
+      <button id="btn-volver" class="mb-6 text-pink-600 hover:underline">&larr; Volver a la lista</button>
+      
+      <h2 class="text-3xl font-semibold text-pink-600 mb-6">Verificación del Pedido</h2>
+
+      <div class="mb-4 space-y-1 text-gray-700">
+        <p><strong>ID de Pedido:</strong> <span id="pedido-id"></span></p>
+        <p><strong>Cliente:</strong> <span id="pedido-cliente"></span></p>
+        <p><strong>Hora de Preparación:</strong> <span id="pedido-hora"></span></p>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="contenido" class="accent-pink-500 h-5 w-5">
+          <label for="contenido" class="text-gray-800">Contenido completo verificado</label>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="temperatura" class="accent-pink-500 h-5 w-5">
+          <label for="temperatura" class="text-gray-800">Temperatura adecuada (caliente)</label>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="envase" class="accent-pink-500 h-5 w-5">
+          <label for="envase" class="text-gray-800">Envase correcto y sellado</label>
+        </div>
+      </div>
+
+      <label for="comentarios" class="text-sm font-medium text-gray-700">Observaciones adicionales:</label>
+      <textarea id="comentarios" rows="3" class="mt-1 mb-4 w-full border border-gray-300 rounded-md p-2 resize-none" placeholder="Escribe aquí algún comentario..."></textarea>
+
+      <button id="btn-confirmar" class="bg-pink-600 text-white w-full py-2 rounded-md hover:bg-pink-700 transition">Confirmar y Enviar a Despacho</button>
+    </div>
+  </div>
+
+  <script>
+    // Datos simulados de pedidos
+    const pedidos = [
+      { id: '#A1256', cliente: 'Juan Pérez', hora: '12:35 p.m.' },
+      { id: '#B9873', cliente: 'María Gómez', hora: '1:10 p.m.' },
+      { id: '#C5642', cliente: 'Carlos Rojas', hora: '1:45 p.m.' }
+    ];
+
+    const listaPedidosEl = document.querySelector('#lista-pedidos ul');
+    const detallePedidoEl = document.getElementById('detalle-pedido');
+    const listaPedidosContenedor = document.getElementById('lista-pedidos');
+
+    const pedidoIdEl = document.getElementById('pedido-id');
+    const pedidoClienteEl = document.getElementById('pedido-cliente');
+    const pedidoHoraEl = document.getElementById('pedido-hora');
+
+    const btnVolver = document.getElementById('btn-volver');
+    const btnConfirmar = document.getElementById('btn-confirmar');
+
+    let pedidoSeleccionado = null;
+
+    // Función para cargar la lista de pedidos
+    function cargarPedidos() {
+      listaPedidosEl.innerHTML = '';
+      pedidos.forEach(pedido => {
+        const li = document.createElement('li');
+        li.className = 'py-4 flex justify-between items-center cursor-pointer hover:bg-pink-50 rounded-md px-3';
+        li.innerHTML = `
+          <div>
+            <p class="font-semibold text-pink-600">${pedido.id}</p>
+            <p class="text-gray-700">${pedido.cliente}</p>
+          </div>
+          <div class="text-gray-500">${pedido.hora}</div>
+        `;
+        li.addEventListener('click', () => mostrarDetalle(pedido));
+        listaPedidosEl.appendChild(li);
+      });
+    }
+
+    // Mostrar detalle del pedido seleccionado
+    function mostrarDetalle(pedido) {
+      pedidoSeleccionado = pedido;
+
+      pedidoIdEl.textContent = pedido.id;
+      pedidoClienteEl.textContent = pedido.cliente;
+      pedidoHoraEl.textContent = pedido.hora;
+
+      // Limpiar checklist y comentarios
+      document.getElementById('contenido').checked = false;
+      document.getElementById('temperatura').checked = false;
+      document.getElementById('envase').checked = false;
+      document.getElementById('comentarios').value = '';
+
+      listaPedidosContenedor.classList.add('hidden');
+      detallePedidoEl.classList.remove('hidden');
+    }
+
+    // Volver a la lista
+    btnVolver.addEventListener('click', () => {
+      detallePedidoEl.classList.add('hidden');
+      listaPedidosContenedor.classList.remove('hidden');
+    });
+
+    // Confirmar y enviar (simulado)
+    btnConfirmar.addEventListener('click', () => {
+      alert(`Pedido ${pedidoSeleccionado.id} confirmado y enviado a despacho.`);
+      // Aquí podrías agregar lógica para enviar datos a backend o actualizar estado
+
+      // Volver a la lista
+      detallePedidoEl.classList.add('hidden');
+      listaPedidosContenedor.classList.remove('hidden');
+    });
+
+    // Inicializamos
+    cargarPedidos();
+  </script>
+</body>
+</html>
