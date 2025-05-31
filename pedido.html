@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seguimiento del Pedido Mejorado</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3); /* sombra suave rosada */
+    }
+  </style>
+</head>
+<body class="bg-pink-100 min-h-screen flex items-center justify-center font-sans p-6">
+  <div class="bg-white shadow-xl rounded-3xl p-10 w-full max-w-4xl">
+    <h1 class="text-4xl font-extrabold text-pink-700 mb-8 text-center tracking-wide">Seguimiento del Pedido</h1>
+
+    <div class="mb-8 text-pink-900 text-base md:text-lg grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div><strong class="font-semibold">Cliente:</strong> Ana Luque</div>
+      <div><strong class="font-semibold">Pedido:</strong> #PED1245</div>
+      <div><strong class="font-semibold">Estado:</strong> <span class="inline-flex items-center gap-1">En camino 🚚</span></div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="mt-6 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="text-pink-800 text-base">
+        <p><strong class="font-medium">Tiempo estimado de llegada:</strong> <span id="tiempoLlegada">Calculando...</span></p>
+      </div>
+      <button id="btnActualizar" class="bg-pink-600 hover:bg-pink-800 text-white font-semibold px-8 py-3 rounded-lg shadow-md transition w-full md:w-auto">
+        Actualizar Ubicación
+      </button>
+    </div>
+
+    <div class="mt-8 text-pink-700 text-sm">
+      <p class="font-semibold mb-2">Leyenda:</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li><span class="inline-block w-5 h-5 bg-pink-400 rounded-full mr-3 align-middle"></span> Repartidor</li>
+        <li><span class="inline-block w-5 h-5 bg-green-400 rounded-full mr-3 align-middle"></span> Cliente</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    let map, markerRepartidor, markerCliente, ruta;
+    const clientePos = { lat: -12.0464, lng: -77.0428 }; // Ubicación fija del cliente (Lima)
+    
+    // Posición inicial repartidor (un poco alejada)
+    let repartidorPos = { lat: -12.0510, lng: -77.0500 };
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 14,
+        center: clientePos,
+        styles: [ // Estilo suave y claro para el mapa
+          {
+            "featureType": "all",
+            "elementType": "labels.text.fill",
+            "stylers": [{ "color": "#6b7280" }]
+          },
+          {
+            "featureType": "all",
+            "elementType": "labels.text.stroke",
+            "stylers": [{ "color": "#ffffff" }, { "lightness": 13 }]
+          },
+          {
+            "featureType": "administrative",
+            "elementType": "geometry.fill",
+            "stylers": [{ "color": "#f8d0d0" }]
+          },
+          {
+            "featureType": "road",
+            "elementType": "geometry",
+            "stylers": [{ "color": "#fce7f3" }]
+          }
+        ]
+      });
+
+      // Marcador cliente (verde suave)
+      markerCliente = new google.maps.Marker({
+        position: clientePos,
+        map: map,
+        title: "Ubicación del Cliente",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: '#34d399', // green-400
+          fillOpacity: 1,
+          strokeWeight: 0,
+        },
+      });
+
+      // Marcador repartidor (rosado suave)
+      markerRepartidor = new google.maps.Marker({
+        position: repartidorPos,
+        map: map,
+        title: "Ubicación del Repartidor",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: '#f472b6', // pink-400
+          fillOpacity: 1,
+          strokeWeight: 0,
+        },
+      });
+
+      // Línea o ruta simulada con color rosado suave
+      ruta = new google.maps.Polyline({
+        path: [repartidorPos, clientePos],
+        geodesic: true,
+        strokeColor: "#f472b6",
+        strokeOpacity: 0.9,
+        strokeWeight: 5,
+        map: map,
+      });
+
+      actualizarTiempoLlegada();
+    }
+
+    function moverRepartidor() {
+      const latChange = (Math.random() - 0.5) * 0.0015;
+      const lngChange = (Math.random() - 0.5) * 0.0015;
+
+      repartidorPos = {
+        lat: repartidorPos.lat + latChange,
+        lng: repartidorPos.lng + lngChange,
+      };
+
+      const maxDist = 0.01;
+      const distLat = Math.abs(repartidorPos.lat - clientePos.lat);
+      const distLng = Math.abs(repartidorPos.lng - clientePos.lng);
+      if (distLat > maxDist) repartidorPos.lat = clientePos.lat + (repartidorPos.lat > clientePos.lat ? maxDist : -maxDist);
+      if (distLng > maxDist) repartidorPos.lng = clientePos.lng + (repartidorPos.lng > clientePos.lng ? maxDist : -maxDist);
+    }
+
+    function calcularDistanciaKm(pos1, pos2) {
+      const R = 6371;
+      const dLat = (pos2.lat - pos1.lat) * Math.PI / 180;
+      const dLng = (pos2.lng - pos1.lng) * Math.PI / 180;
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(pos1.lat * Math.PI/180) * Math.cos(pos2.lat * Math.PI/180) *
+        Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function actualizarTiempoLlegada() {
+      const distancia = calcularDistanciaKm(repartidorPos, clientePos);
+      const velocidadKmH = 30;
+      const tiempoHoras = distancia / velocidadKmH;
+      const minutos = Math.round(tiempoHoras * 60);
+      const texto = minutos > 0 ? `${minutos} min` : 'Llegando...';
+      document.getElementById('tiempoLlegada').textContent = texto;
+    }
+
+    function actualizarUbicacion() {
+      const btn = document.getElementById('btnActualizar');
+      btn.disabled = true;
+      btn.textContent = "Actualizando...";
+
+      moverRepartidor();
+      markerRepartidor.setPosition(repartidorPos);
+      ruta.setPath([repartidorPos, clientePos]);
+
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(repartidorPos);
+      bounds.extend(clientePos);
+      map.fitBounds(bounds);
+
+      actualizarTiempoLlegada();
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = "Actualizar Ubicación";
+      }, 1000);
+    }
+
+    window.onload = () => {
+      initMap();
+      document.getElementById('btnActualizar').addEventListener('click', actualizarUbicacion);
+    };
+  </script>
+
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRjzNbUrxtbg4DAtJa-5z0vu3D94CyJJw&callback=initMap">
+  </script>
+</body>
+</html>
